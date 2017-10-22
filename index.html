@@ -46,7 +46,8 @@
         .action-type > label > input{
             display: none;
         }
-        #signInAndSignUp input[type="text"]{
+        #signInAndSignUp input[type="text"],
+        #signInAndSignUp input[type="password"]{
             display: block;
             padding: 10px;
             width: 250px;
@@ -56,7 +57,8 @@
             overflow: hidden;
             color: #333;
         }
-        #signInAndSignUp input[type="text"]:focus{
+        #signInAndSignUp input[type="text"]:focus,
+        #signInAndSignUp input[type="password"]:focus{
             border-color: #66afe9;
             outline: 0;
         }
@@ -82,11 +84,17 @@
             font-size: 15px;
             font-weight: 300;
             cursor: pointer;
+            transition: 1s
+        }
+        .formActions>input[type="submit"]:hover,
+        .logout-button:hover{
+            background-color: rgba(65,105,225,0.5);
         }
         .formActions>input[type="submit"]{
             width: 250px;
         }
-        .signUp,.login{
+        .signUp,
+        .login{
             position: relative;
         }
         .signUp:before,
@@ -155,7 +163,6 @@
             font-size: 18px;
             overflow: hidden;
             color: #333;
-            vertical-align: middle;
         }
         .icon {
            width: 1em; 
@@ -218,44 +225,112 @@
         .todo-li:hover .remove-todo-button .icon{
             fill:#fff;
         }
-    </style>
-    <script src="https://at.alicdn.com/t/font_391266_knjlfm17n26v42t9.js
-"></script>
+        #app{
+            position: relative;
+        }
+        .message-box{
+            position: fixed;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            height: 40px;
+            width: 250px;
+            background-color: #fff;
+            border-radius: 2px;
+            box-shadow: 0 4px 12px 0 rgba(84,84,120,0.3);
+            overflow: hidden;
+        }
+        .message-box .message-icon{
+            display: inline-block;
+            padding: 10px;
+            margin-right: 10px;
+            height: 100%;
+            width:40px;
+            fill: #fff;
+            vertical-align: top;
+        }
+        .message-box .message{
+            display: inline-block;
+            line-height: 40px;
+            height: 100%;
+            color: #8391a5;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        @keyframes slideIn{
+            0%{
+                opacity: 0;
+            }
+            15%,100%{
+                top: 40px;
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            0%{
+                top: 40px;
+                opacity: 1;
+            }
+            100%{
+                top:-50px;
+                opacity: 0;
+            }
+        }
+        .slide-enter-active{
+            animation: slideIn 3s ease-in
+        }
+        .slide-leave-active{
+            animation: slideOut 1s
+        }
+    </style>   
+    <script src="//at.alicdn.com/t/font_449374_302a557hq29h33di.js"></script>
   </head>
   <body>
     <div id="app" class="container">
+        <transition name="slide" v-on:after-enter="afterEnter">
+            <div class="message-box" v-if="show">
+                <svg class="message-icon" v-bind:style="{backgroundColor:iconBg}">
+                    <use v-bind:xlink:href="'#icon-'+iconName"></use>
+                </svg>
+                <span class="message">{{message}}</span>
+            </div>    
+        </transition>
         <section id="signInAndSignUp" v-if="!currentUser">
             <div class="title">
                 <h1 class="product-name">TODO</h1>
                 <p class="product-simple-info">A Simple Todo Creator</p>
             </div>
-            
+
             <div class="action-type">
                 <label><input type="radio" name="type" v-model="actionType" value="signUp">SIGN UP</label>
                 <label><input type="radio" name="type" v-model="actionType" value="login">LOGIN</label>
             </div>
+
+            <transition>
             <div class="signUp" v-if="actionType =='signUp'" v-cloak>
                 <form @submit.prevent="signUp">
-                        <input type="text" placeholder="Username" v-model="formData.username">
-                        <input type="text" placeholder="Password" v-model="formData.password">
-                    <div class="formActions">
+                        <input type="text" placeholder="Username" v-model.trim="formData.username">
+                        <input type="password" placeholder="Password" v-model.trim="formData.password">
+                    <div class="formActions" v-if="actionType =='signUp'">
                         <input type="submit" value="Sign Up">
                     </div>
                 </form>
             </div>
-            <div class="login" v-if="actionType == 'login'" >
+            <div class="login" v-if="actionType == 'login'">
                 <form  @submit.prevent="login">
-                        <input type="text" placeholder="Username" v-model="formData.username">
-                        <input type="text" placeholder="Password" v-model="formData.password">
-                    <div class="formActions">
+                    <input type="text" placeholder="Username" v-model.trim="formData.username">
+                    <input type="password" placeholder="Password" v-model.trim="formData.password">
+                    <div class="formActions" v-if="actionType =='login'">
                         <input type="submit" value="Login">
                     </div>
                 </form>
             </div>
+            </transition>
+        
         </section>
         <section id="todo" v-if="currentUser" v-cloak>
             <div class="header">
-                <p class="hi-user">Hi {{currentUser.username}}!</p>
+                <p class="hi-user">Hi&nbsp;{{currentUser.username}}!</p>
                 <button v-on:click="logout" class="logout-button">Log Out</button>
                 <p class="date-now">{{dateNow}}</p>
             </div>
@@ -267,7 +342,7 @@
                     <input type="checkbox" v-model="item.done" v-bind:id="'prefix'+index">
                     <label v-bind:for="'prefix'+index">
                         <svg class="icon">
-                            <use xlink:href="#icon-gou"></use>
+                            <use xlink:href="#icon-tick"></use>
                         </svg>
                     </label>
                     <span class="todo-index">{{index+1+'.'}}</span>

@@ -21,7 +21,14 @@ var app = new Vue({
             password:''
         },
         currentUser:null,
-        dateNow:''
+        dateNow:'',
+        message:'',
+        show:false,
+        //danger  success  info warning   
+        iconList:['chacha','tick','exclamation2','exclamation1'],
+        iconBgList:['#ff4949','#13ce66','#50bfff','#f7ba2a'],
+        iconBg:'',
+        iconName:''
     },
     methods:{
         addTodo:function () {
@@ -30,19 +37,26 @@ var app = new Vue({
                 createdTime:this.setCreatedTime(),
                 done:false
             })
-            // console.log(this.todoList)
             this.newTodo = ''
             this.saveOrUpdateTodos()
         },
         setCreatedTime:function () {
             var time = new Date(),
                 year = time.getFullYear(),
-                month = time.getMonth()+1,
-                day = time.getDate(),
-                hour = time.getHours(),
-                minute = time.getMinutes()
+                month = addZeroBefore(time.getMonth()+1),
+                day = addZeroBefore(time.getDate()),
+                hour = addZeroBefore(time.getHours()),
+                minute = addZeroBefore(time.getMinutes());
 
                 return  (month+ '/'+ day+'\''+ year +' '+ hour +':'+ minute)
+
+                function addZeroBefore(number){
+                    if(number<10){
+                        return '0'+number
+                    }else{
+                        return number
+                    }
+                }
         },
         removeTodo:function (item) {
             let index = this.todoList.indexOf(item)
@@ -50,26 +64,72 @@ var app = new Vue({
             this.saveOrUpdateTodos()
         },
         signUp:function () {
-            // 新建 AVUser 对象实例
-            var user = new AV.User();
-            // 设置用户名
-            user.setUsername(this.formData.username);
-            // 设置密码
-            user.setPassword(this.formData.password);
+            let username = this.formData.username
+            let password = this.formData.password
+            if(username.length===0 ||password.length===0){
+                this.message = '用户名或密码未填写'
+                this.alertMessage(3)
+                return
+            }else if(username.indexOf(' ')!==-1&&password.indexOf(' ')!==-1){
+                this.message = '用户名或密码不允许有空格'
+                this.alertMessage(3)
+                return
+            }else if(password.length < 4){
+                this.message = '密码不得少于4位'
+                this.alertMessage(3)
+                return
+            }else {
+                // 新建 AVUser 对象实例
+                var user = new AV.User();
+                // 设置用户名
+                user.setUsername(this.formData.username);
+                // 设置密码
+                user.setPassword(this.formData.password);
 
-            user.signUp().then((loginedUser) => {
-               this.currentUser = this.getCurrentUser()
-            }, function (error) {
-              console.log('注册失败')
-            });
+                user.signUp().then((loginedUser) => {
+                this.currentUser = this.getCurrentUser()
+                this.message = '注册成功'
+                this.alertMessage(1)
+                },  (error)=> {
+                    if(error.code === 202){
+                        this.message = '用户名已被注册';
+                    }else{
+                        this.message = '注册失败'
+                    }
+                    this.alertMessage(0)             
+                });
+            }
+        },
+        alertMessage:function(number){
+            this.iconName = this.iconList[number]
+            this.iconBg = this.iconBgList[number]
+            this.show = true
+        },
+        afterEnter:function(){
+            this.show = false
         },
         login:function(){
             //箭头函数
             AV.User.logIn(this.formData.username, this.formData.password).then((loginedUser)=> {
+                console.log(loginedUser)
+                this.message = '登录成功'
+                this.alertMessage(2)
                 this.currentUser = this.getCurrentUser()
                 this.fetchTodos()
-            }, function (error) {
-                console.log('登录失败')
+            }, (error)=> {
+                console.dir(error)
+                if(error.code === 210){
+                    this.message = '用户名和密码不匹配';
+                }else if(error.code === 211){
+                    this.message = '不存在此用户名'
+                }else if(error.code === 219){
+                    this.message = '登录过于频繁，请稍后再试'
+                    this.alertMessage(3)
+                    return
+                }else{
+                    this.message = '登录失败'
+                }
+                this.alertMessage(0)
             });
         },
         getCurrentUser:function () {
@@ -141,7 +201,7 @@ var app = new Vue({
         setDateNow:function () {
             var time = new Date(),
                 year = time.getFullYear(),
-                month = time.getMonth()+1,
+                month = time.getMonth(),
                 day = time.getDate(),
                 weekday = time.getDay(),
                 weekdayList = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
